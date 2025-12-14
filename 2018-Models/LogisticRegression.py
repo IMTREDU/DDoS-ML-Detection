@@ -4,6 +4,8 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from sklearn.preprocessing import label_binarize
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.decomposition import PCA
@@ -19,23 +21,24 @@ from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline
 
 # ==========================================
-#           TRAIN ON CICIDS2017
+#           TRAIN ON CICIDS2018
 # ==========================================
-print("--- Training on CICIDS2017 (Logistic Regression) ---")
+print("--- Training on CICIDS2018 (Logistic Regression) ---")
 
 # 1. Load Dataset
-file_path_2017 = os.path.join(
-    os.path.dirname(__file__), '..', 'DataSets', 'cicids2017.csv'
+file_path_2018 = os.path.join(
+    os.path.dirname(__file__), '..', 'DataSets', 'cicids2018.csv'
 )
 
-if not os.path.exists(file_path_2017):
-    raise FileNotFoundError(f"Could not find {file_path_2017}")
+if not os.path.exists(file_path_2018):
+    raise FileNotFoundError(f"Could not find {file_path_2018}")
 
-df = pd.read_csv(file_path_2017)
+df = pd.read_csv(file_path_2018)
 print(f"Original Dataset Shape: {df.shape}")
 
 # 2. Basic Cleaning
 df.columns = df.columns.str.strip()
+df.drop(columns=['Timestamp'], inplace=True, errors='ignore')
 df.replace([np.inf, -np.inf], np.nan, inplace=True)
 df.dropna(inplace=True)
 df.drop_duplicates(inplace=True)
@@ -74,7 +77,7 @@ pipeline = Pipeline(steps=[
 # ==========================================
 # 6. Model Training
 # ==========================================
-print("[2017] Training Logistic Regression pipeline...")
+print("[2018] Training Logistic Regression pipeline...")
 pipeline.fit(X_train, y_train)
 
 # Predictions
@@ -116,7 +119,7 @@ print(f"Average CV Accuracy: {cv_scores.mean():.4f}")
 # ==========================================
 # 8. Evaluation Metrics
 # ==========================================
-print("\n[2017 Test Classification Report]")
+print("\n[2018 Test Classification Report]")
 print(classification_report(y_test, y_pred))
 
 # Confusion Matrix
@@ -129,15 +132,19 @@ plt.ylabel('True Label')
 plt.show()
 
 # Precision-Recall Curve
-print("[2017] Plotting Precision-Recall Curve...")
-y_probs = pipeline.predict_proba(X_test)[:, 1]
-precision, recall, _ = precision_recall_curve(y_test, y_probs)
+print("[2018] Plotting Precision-Recall Curve...")
+y_test_bin = label_binarize(y_test, classes=[0,1,2])
+y_score = pipeline.predict_proba(X_test)
 
-plt.figure(figsize=(8, 6))
-plt.plot(recall, precision, label='Logistic Regression')
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('Precision-Recall Curve (CICIDS2017)')
+for i, class_name in enumerate(le.classes_):
+    precision, recall, _ = precision_recall_curve(
+        y_test_bin[:, i],
+        y_score[:, i]
+    )
+    plt.plot(recall, precision, label=class_name)
+
+plt.xlabel("Recall")
+plt.ylabel("Precision")
+plt.title("Multiclass Precision-Recall Curves (CICIDS2018)")
 plt.legend()
-plt.grid(True)
 plt.show()
