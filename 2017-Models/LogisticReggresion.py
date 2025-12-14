@@ -16,11 +16,10 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 # ==========================================
 print("--- PHASE 1: Training on CICIDS2017 ---")
 
-file_path_2017 = os.path.join(os.path.dirname(__file__), 'cicids2017.csv')
-if not os.path.exists(file_path_2017):
-    raise FileNotFoundError(f"Could not find {file_path_2017}")
+df = pd.read_csv("../DataSets/cicids2017.csv", low_memory=False)
 
-df = pd.read_csv(file_path_2017)
+print(f"Original Dataset Shape: {df.shape}")
+df.head()
 
 df.columns = df.columns.str.strip()
 df.replace([np.inf, -np.inf], np.nan, inplace=True)
@@ -59,7 +58,6 @@ y_pred = lr_model.predict(X_test_pca)
 print("\n[2017 Test Results]")
 print(classification_report(y_test, y_pred))
 
-# Plot Confusion Matrix
 plt.figure(figsize=(8, 6))
 cm_lr = confusion_matrix(y_test, y_pred)
 sns.heatmap(cm_lr, annot=True, fmt='d', cmap='Blues', cbar=False)
@@ -68,7 +66,6 @@ plt.xlabel('Predicted Label')
 plt.ylabel('True Label')
 plt.show()
 
-# --- ADDED: PRECISION-RECALL CURVE ---
 print("[2017] Plotting Precision-Recall Curve...")
 # Get probabilities for the positive class (Class 1: DDoS)
 y_probs = lr_model.predict_proba(X_test_pca)[:, 1]
@@ -82,15 +79,13 @@ plt.title('Precision-Recall Curve (CICIDS2017)')
 plt.legend()
 plt.grid(True)
 plt.show()
-# -------------------------------------
-
 
 # ==========================================
 # PHASE 2: CROSS-VALIDATION ON CICIDS2018
 # ==========================================
 print("\n--- PHASE 2: Cross-Validation on CICIDS2018 ---")
 
-file_path_2018 = os.path.join(os.path.dirname(__file__), 'cicids2018.csv')
+file_path_2018 = os.path.join(os.path.dirname(__file__), '..', 'DataSets', 'cicids2018.csv')
 
 if os.path.exists(file_path_2018):
     df_2018 = pd.read_csv(file_path_2018)
